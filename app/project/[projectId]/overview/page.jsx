@@ -2,6 +2,7 @@
 
 import { use, useState } from 'react';
 import { useApi } from '../../../../lib/client/hooks/useApi';
+import Link from 'next/link';
 
 export default function OverviewPage({ params }) {
     const { projectId } = use(params);
@@ -15,18 +16,34 @@ export default function OverviewPage({ params }) {
         immediate: true
     });
 
-    const mcpConfig = data?.mcpKey ? {
+    const { data: credentialsData } = useApi(`/v1/getCloudCredentials?projectId=${projectId}`, {
+        immediate: true
+    });
+
+    const isDev = process.env.NODE_ENV === 'development';
+
+    const mcpConfig = data?.mcpKey ? (isDev ? {
+        mcpServers: {
+            turbobackend: {
+                command: "turbobackend-mcp",
+                env: {
+                    TURBOBACKEND_API_KEY: data.mcpKey,
+                    TURBOBACKEND_API_URL: process.env.NEXT_PUBLIC_BACKEND_BASE_URL
+                }
+            }
+        }
+    } : {
         mcpServers: {
             turbobackend: {
                 command: "npx",
                 args: ["-y", "@turbobackend/mcp-server"],
                 env: {
                     TURBOBACKEND_API_KEY: data.mcpKey,
-                    TURBOBACKEND_API_URL: "http://localhost:3001"
+                    TURBOBACKEND_API_URL: process.env.NEXT_PUBLIC_BACKEND_BASE_URL
                 }
             }
         }
-    } : null;
+    }) : null;
 
     async function handleCopy() {
         if (!mcpConfig) return;
@@ -42,6 +59,10 @@ export default function OverviewPage({ params }) {
         }
     }
 
+    const missingCredentials = credentialsData?.credentials?.filter(function(cred) {
+        return cred.hasMissingFields;
+    }) || [];
+
     return (
         <div className="space-y-8">
             <header>
@@ -50,6 +71,28 @@ export default function OverviewPage({ params }) {
                     {projectLoading ? 'Loading...' : projectData?.project?.project_name || '[Project Name]'}
                 </h1>
             </header>
+
+            {missingCredentials.length > 0 && (
+                <section className="rounded-2xl border border-red-500/50 bg-red-500/10 p-6">
+                    <h3 className="text-lg font-semibold text-red-300 mb-2">Missing Cloud Credentials</h3>
+                    <p className="text-sm text-red-200 mb-3">
+                        The following credentials need to be configured:
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-red-200 mb-4 space-y-1">
+                        {missingCredentials.map(function(cred) {
+                            return (
+                                <li key={cred.credentialId}>{cred.credentialName}</li>
+                            );
+                        })}
+                    </ul>
+                    <Link
+                        href={`/project/${projectId}/project-settings`}
+                        className="inline-block px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-500 transition-colors"
+                    >
+                        Go to Project Settings
+                    </Link>
+                </section>
+            )}
 
             <section className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-blue-900/20 backdrop-blur">
                 <div className="flex items-center justify-between mb-4">

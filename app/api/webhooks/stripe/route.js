@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { headers } from 'next/headers';
-const stripe = require('stripe')(process.env.STRIPE_STANDARD_SECRET_KEY);
+import Stripe from 'stripe';
 import pool from "../../../lib/server/dbConnectors/postgresConnector";
-import { errorLogger } from "../../../../lib/server/errorLoggers/errorLogger";
-import { sendEmail } from "../../../../lib/server/services/emailSender";
+import { errorLogger } from "../../../lib/server/errorLoggers/errorLogger";
+import { sendEmail } from "../../../lib/server/services/emailSender";
+
+const stripe = new Stripe(process.env.STRIPE_STANDARD_SECRET_KEY);
 // This is your Stripe CLI webhook secret for testing your endpoint locally.
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET_KEY;
 

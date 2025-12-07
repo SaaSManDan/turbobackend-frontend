@@ -50,105 +50,6 @@ export default function ApiEndpointsPage({ params }) {
         );
     }
 
-    function renderEndpoint(endpoint) {
-        const isExpanded = expandedEndpoints.has(endpoint.id);
-
-        return (
-            <div key={endpoint.id} className="border border-white/10 rounded-lg overflow-hidden bg-[#0f0f23]">
-                {/* Endpoint Header */}
-                <div
-                    className="flex items-center gap-4 p-4 cursor-pointer hover:bg-white/5 transition-colors"
-                    onClick={() => toggleEndpoint(endpoint.id)}
-                >
-                    <div className="flex-shrink-0">
-                        {isExpanded ? (
-                            <ChevronDown className="h-5 w-5 text-gray-400" />
-                        ) : (
-                            <ChevronRight className="h-5 w-5 text-gray-400" />
-                        )}
-                    </div>
-                    <div className={`px-3 py-1 rounded-md border text-xs font-bold uppercase ${getMethodColor(endpoint.method)}`}>
-                        {endpoint.method}
-                    </div>
-                    <div className="flex-1">
-                        <div className="font-mono text-sm text-white">{endpoint.path}</div>
-                        {endpoint.description && (
-                            <div className="text-xs text-gray-400 mt-1">{endpoint.description}</div>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                        {endpoint.authentication === 'none' ? (
-                            <div className="flex items-center gap-1 text-gray-400">
-                                <Unlock className="h-4 w-4" />
-                                <span>Public</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1 text-yellow-400">
-                                <Lock className="h-4 w-4" />
-                                <span>Auth Required</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Endpoint Details */}
-                {isExpanded && (
-                    <div className="border-t border-white/10 p-6 space-y-6 bg-[#0a0a15]">
-                        {/* Request Parameters */}
-                        {endpoint.requestParams && (
-                            <div>
-                                {renderJsonSchema(endpoint.requestParams, 'Request Parameters')}
-                            </div>
-                        )}
-
-                        {/* Request Body */}
-                        {endpoint.requestBody && (
-                            <div>
-                                {renderJsonSchema(endpoint.requestBody, 'Request Body')}
-                            </div>
-                        )}
-
-                        {/* Response Schema */}
-                        {endpoint.responseSchema && (
-                            <div>
-                                {renderJsonSchema(endpoint.responseSchema, 'Response Schema')}
-                            </div>
-                        )}
-
-                        {/* Response Example */}
-                        {endpoint.responseExample && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-white mb-2">Response Example</h4>
-                                <pre className="bg-black/30 rounded-lg p-3 text-xs text-green-300 overflow-x-auto border border-white/10">
-                                    <code>{JSON.stringify(endpoint.responseExample, null, 2)}</code>
-                                </pre>
-                            </div>
-                        )}
-
-                        {/* Error Responses */}
-                        {endpoint.errorResponses && endpoint.errorResponses.length > 0 && (
-                            <div>
-                                <h4 className="text-sm font-semibold text-white mb-3">Error Responses</h4>
-                                <div className="space-y-2">
-                                    {endpoint.errorResponses.map(function(errorResponse, index) {
-                                        return (
-                                            <div key={index} className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-red-400 font-bold text-sm">{errorResponse.status}</span>
-                                                    <span className="text-red-300 text-xs">{errorResponse.description}</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        );
-    }
-
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -198,8 +99,103 @@ export default function ApiEndpointsPage({ params }) {
                 </div>
             ) : (
                 <div className="space-y-4 max-w-6xl">
-                    {endpoints.map(function(endpoint) {
-                        return renderEndpoint(endpoint);
+                    {endpoints.map(function(endpoint, index) {
+                        const isExpanded = expandedEndpoints.has(endpoint.id);
+                        
+                        return (
+                            <div key={index} className="border border-white/10 rounded-lg overflow-hidden bg-[#0f0f23]">
+                                {/* Endpoint Header */}
+                                <div
+                                    className="flex items-center gap-4 p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                                    onClick={() => toggleEndpoint(endpoint.id)}
+                                >
+                                    <div className="flex-shrink-0">
+                                        {isExpanded ? (
+                                            <ChevronDown className="h-5 w-5 text-gray-400" />
+                                        ) : (
+                                            <ChevronRight className="h-5 w-5 text-gray-400" />
+                                        )}
+                                    </div>
+                                    <div className={`px-3 py-1 rounded-md border text-xs font-bold uppercase ${getMethodColor(endpoint.method)}`}>
+                                        {endpoint.method}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-mono text-sm text-white">{endpoint.path}</div>
+                                        {endpoint.description && (
+                                            <div className="text-xs text-gray-400 mt-1">{endpoint.description}</div>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs">
+                                        {endpoint.authentication === 'none' ? (
+                                            <div className="flex items-center gap-1 text-gray-400">
+                                                <Unlock className="h-4 w-4" />
+                                                <span>Public</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 text-yellow-400">
+                                                <Lock className="h-4 w-4" />
+                                                <span>Auth Required</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Endpoint Details */}
+                                {isExpanded && (
+                                    <div className="border-t border-white/10 p-6 space-y-6 bg-[#0a0a15]">
+                                        {/* Request Parameters */}
+                                        {endpoint.requestParams && (
+                                            <div>
+                                                {renderJsonSchema(endpoint.requestParams, 'Request Parameters')}
+                                            </div>
+                                        )}
+
+                                        {/* Request Body */}
+                                        {endpoint.requestBody && (
+                                            <div>
+                                                {renderJsonSchema(endpoint.requestBody, 'Request Body')}
+                                            </div>
+                                        )}
+
+                                        {/* Response Schema */}
+                                        {endpoint.responseSchema && (
+                                            <div>
+                                                {renderJsonSchema(endpoint.responseSchema, 'Response Schema')}
+                                            </div>
+                                        )}
+
+                                        {/* Response Example */}
+                                        {endpoint.responseExample && (
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-white mb-2">Response Example</h4>
+                                                <pre className="bg-black/30 rounded-lg p-3 text-xs text-green-300 overflow-x-auto border border-white/10">
+                                                    <code>{JSON.stringify(endpoint.responseExample, null, 2)}</code>
+                                                </pre>
+                                            </div>
+                                        )}
+
+                                        {/* Error Responses */}
+                                        {endpoint.errorResponses && endpoint.errorResponses.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-white mb-3">Error Responses</h4>
+                                                <div className="space-y-2">
+                                                    {endpoint.errorResponses.map(function(errorResponse, index) {
+                                                        return (
+                                                            <div key={index} className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className="text-red-400 font-bold text-sm">{errorResponse.status}</span>
+                                                                    <span className="text-red-300 text-xs">{errorResponse.description}</span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        );
                     })}
                 </div>
             )}

@@ -794,7 +794,7 @@ projectId: string (required) - The project ID to retrieve details for
 
 ### Description
 
-Retrieves all cloud provider credentials for a specific project. Returns credential metadata including provider type, credential name, region, and validation status indicating whether any fields are missing or empty. The actual decrypted credential values are returned in the `credentialFields` object. Requires authentication via Clerk token in Authorization header and verifies that the authenticated user has access to the requested project using RLS (Row Level Security) checks. Access control is enforced solely through the RLS check rather than database-level filtering.
+Retrieves all cloud provider credentials for a specific project. Returns credential metadata including provider type, credential name, region, and validation status indicating whether the credential value is missing or empty. The actual decrypted credential value is returned as a string. Requires authentication via Clerk token in Authorization header and verifies that the authenticated user has access to the requested project using RLS (Row Level Security) checks. Access control is enforced solely through the RLS check rather than database-level filtering.
 
 ### Authentication
 
@@ -819,10 +819,8 @@ projectId: string (required) - The project ID to retrieve cloud credentials for
       "credentialName": "string",
       "defaultRegion": "string",
       "isActive": "boolean",
-      "hasMissingFields": "boolean - true if any fields are missing or empty",
-      "credentialFields": {
-        "fieldName": "string - actual decrypted credential value"
-      },
+      "hasMissingFields": "boolean - true if credential value is missing or empty",
+      "credentialValue": "string - actual decrypted credential value",
       "createdAt": "number - unix timestamp in seconds",
       "updatedAt": "number - unix timestamp in seconds"
     }
@@ -868,10 +866,9 @@ projectId: string (required) - The project ID to retrieve cloud credentials for
 - User ID is automatically extracted from the verified token via `event.context.auth.userId`
 - RLS check is performed using `verifyProjectAccess()` to ensure the user owns the project
 - Credentials are returned in descending order by creation date (newest first)
-- The actual credential values are decrypted and returned in the `credentialFields` object as key-value pairs
-- The `credentialFields` object contains all fields present in the stored credentials with their actual decrypted values
-- A field is considered empty if it's null, undefined, or a string with only whitespace
-- If decryption fails, `hasMissingFields` is set to true and `credentialFields` is an empty object
+- The actual credential value is decrypted and returned as a string in `credentialValue`
+- A credential is considered missing if it's null, undefined, or a string with only whitespace
+- If decryption fails, `hasMissingFields` is set to true and `credentialValue` is an empty string
 - The endpoint uses a database connection from the connection pool and properly releases it after use
 
 
@@ -891,9 +888,9 @@ Requires Bearer token in Authorization header. Authentication is handled by midd
 {
   "projectId": "string (required) - The project ID",
   "credentialId": "string (optional) - If provided, updates existing credential. If omitted, creates new credential",
-  "cloudProvider": "string (required for new credentials) - aws, gcp, or azure",
+  "cloudProvider": "string (required for new credentials) - aws, gcp, azure, stripe, clerk, etc.",
   "credentialName": "string (optional) - Display name for the credential",
-  "credentials": "object (required) - Key-value pairs of credential fields",
+  "credentialValue": "string (required) - The credential value to store",
   "defaultRegion": "string (optional) - Default region for the cloud provider"
 }
 ```
@@ -922,7 +919,7 @@ OR
 ```json
 {
   "success": false,
-  "error": "credentials object is required"
+  "error": "credentialValue is required"
 }
 ```
 
@@ -965,15 +962,98 @@ OR
 - User ID is automatically extracted from the verified token via `event.context.auth.userId`
 - RLS check is performed using `verifyProjectAccess()` to ensure the user owns the project
 - **Update mode** (when `credentialId` is provided):
-  - Verifies the credential belongs to the user and project
-  - Decrypts existing credentials and merges with new fields
-  - Allows partial updates without losing existing fields
+  - Verifies the credential belongs to the project
+  - Replaces the existing credential value with the new value
   - Can optionally update `defaultRegion`
 - **Create mode** (when `credentialId` is omitted):
   - Requires `cloudProvider` to be specified
   - Generates a new credential ID using nanoid
   - Sets `credentialName` to `{cloudProvider} Credentials` if not provided
   - Sets `is_active` to true by default
-- All credential values are encrypted using the encryption utility before storage
+- The credential value is encrypted using the encryption utility before storage as a string
 - The endpoint uses database transactions to ensure data consistency
+- The endpoint uses a database connection from the connection pool and properly releases it after use
+
+
+## POST /v1/updateProjectName
+
+### Description
+
+Updates the name of an existing project. Requires authentication via Clerk token in Authorization header and verifies that the authenticated user has access to the requested project using RLS (Row Level Security) checks.
+
+### Authentication
+
+Requires Bearer token in Authorization header. Authentication is handled by middleware which sets `event.context.auth.userId`.
+
+### Request Body
+
+```json
+{
+  "projectId": "string (required) - The project ID to update",
+  "projectName": "string (required) - The new name for the project"
+}
+```
+
+### Response
+
+**Success (200):**
+```json
+{
+  "success": true,
+  "project": {
+    "project_id": "string - nanoid",
+    "project_name": "string - updated project name",
+    "updated_at": "number - unix timestamp in seconds"
+  },
+  "message": "Project name updated successfully"
+}
+```
+
+**Validation Error (400):**
+```json
+{
+  "success": false,
+  "error": "projectId is required"
+}
+```
+
+OR
+
+```json
+{
+  "success": false,
+  "error": "projectName is required"
+}
+```
+
+**Access Denied (403):**
+```json
+{
+  "success": false,
+  "error": "Access denied"
+}
+```
+
+**Not Found (404):**
+```json
+{
+  "success": false,
+  "error": "Project not found"
+}
+```
+
+**Server Error (500):**
+```json
+{
+  "success": false,
+  "error": "Failed to update project name"
+}
+```
+
+### Notes
+
+- Authentication errors (401) are handled by the auth middleware before reaching this endpoint
+- User ID is automatically extracted from the verified token via `event.context.auth.userId`
+- RLS check is performed using `verifyProjectAccess()` to ensure the user owns the project
+- The `updated_at` timestamp is automatically set to the current unix time in seconds
 - The endpoint uses a database connection from the connection pool and properly releases it after use

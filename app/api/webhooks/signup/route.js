@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { Webhook } from 'svix';
 import { errorLogger } from '../../../../lib/server/errorLoggers/errorLogger';
-import { sendEmail } from '../../../../lib/server/emailSender';
+import { sendEmail } from '../../../../lib/server/services/emailSender';
 
 const stripe = new Stripe(process.env.STRIPE_STANDARD_SECRET_KEY);
 

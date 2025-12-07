@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSelectedLayoutSegment } from 'next/navigation';
-import { useApi } from '@/lib/client/hooks/useApi';
+import { useProject } from './layout';
 import {
     LayoutDashboard,
     Code2,
@@ -13,6 +13,7 @@ import {
     Cpu,
     Activity,
     Settings,
+    KeyRound,
     ChevronLeft,
     ChevronRight,
     LogOut
@@ -27,15 +28,13 @@ const menuItems = [
     // { slug: 'functions', label: 'Functions', icon: Zap },
     // { slug: 'workers', label: 'Workers', icon: Cpu },
     { slug: 'activity', label: 'Activity', icon: Activity },
+    { slug: 'cloud-credentials', label: 'Cloud Credentials', icon: KeyRound },
     { slug: 'project-settings', label: 'Project Settings', icon: Settings }
 ];
 
 export default function ProjectSidebar({ projectId, collapsed, setCollapsed }) {
     const activeSegment = useSelectedLayoutSegment();
-    
-    const { data: projectData } = useApi(`/v1/getProjectDetails?projectId=${projectId}`, {
-        immediate: true
-    });
+    const { projectName } = useProject();
 
     return (
         <aside
@@ -56,7 +55,7 @@ export default function ProjectSidebar({ projectId, collapsed, setCollapsed }) {
                         <div className="leading-tight">
                             <p className="text-xs uppercase tracking-wide text-gray-400">Project</p>
                             <p className="text-base font-semibold text-white truncate">
-                                {projectData?.project?.project_name || projectId}
+                                {projectName || projectId}
                             </p>
                         </div>
                     )}
